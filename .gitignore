@@ -1,0 +1,14 @@
+# Virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# Crawled data
+mirror/raw/
+mirror/rendered/
+mirror/meta/
+mirror/extracted/
+
+# OS clutter
+.DS_Store
+Thumbs.db
