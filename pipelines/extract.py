@@ -12,6 +12,8 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Union
 from urllib.parse import urlparse
+import hashlib
+import unicodedata
 import logging
 
 try:
@@ -333,6 +335,34 @@ class DoctifyExtractor:
 
         return value
 
+    def _slugify(self, text: str) -> str:
+        """Convert text to URL-safe slug"""
+        text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
+        text = re.sub(r"[^a-zA-Z0-9]+", "-", text).strip("-").lower()
+        return re.sub(r"-{2,}", "-", text)
+
+    def _derive_slug(self, canonical_url: str, title: str) -> str:
+        """Derive a unique slug from canonical URL or title"""
+        path = ""
+        try:
+            path = urlparse(canonical_url or "").path
+        except Exception:
+            pass
+        segs = [s for s in path.split("/") if s]
+        # Remove noisy/date segments
+        drop = re.compile(r"(uk|en|blog|category|tag|page|\d{1,2}|\d{4})$", re.I)
+        filtered = [s for s in segs if not drop.fullmatch(s)]
+        if filtered:
+            cand = filtered[-1].lower()
+            if not re.fullmatch(r"\d{4}", cand):
+                return cand
+        if title:
+            cand = self._slugify(title)
+            if cand:
+                return cand
+        h = hashlib.sha1((canonical_url or title or "x").encode("utf-8")).hexdigest()[:8]
+        return f"post-{h}"
+
     def extract_entity(self, page_type: str, soup: BeautifulSoup, url: str, html_path: str) -> Dict:
         """
         Extract entity data from a page.
@@ -362,16 +392,12 @@ class DoctifyExtractor:
                 entity_data[field_name] = field_config.get('fallback')
 
         # Special handling for blog_post slug
-        if page_type == 'blog_post' and (not entity_data.get('slug') or entity_data['slug'] == ''):
-            # Derive slug from canonical URL
-            canonical_url = entity_data.get('canonical_url', url)
-            if canonical_url:
-                # Extract slug from URL path
-                parsed = urlparse(canonical_url)
-                path_parts = [p for p in parsed.path.strip('/').split('/') if p]
-                if len(path_parts) > 0:
-                    # Use the last meaningful part of the path as slug
-                    entity_data['slug'] = path_parts[-1].lower()
+        if page_type == 'blog_post':
+            # Use improved slug derivation to eliminate duplicates
+            entity_data['slug'] = self._derive_slug(
+                entity_data.get('canonical_url') or url,
+                entity_data.get('title', '')
+            )
 
         # Add extraction metadata
         entity_data['extracted_at'] = datetime.now().isoformat()
@@ -529,8 +555,12 @@ class DoctifyExtractor:
             'processed': 0,
             'skipped': 0,
             'errors': 0,
-            'by_type': {}
+            'by_type': {},
+            'slug_collisions': 0
         }
+
+        # Track seen slugs to detect and resolve collisions
+        seen_slugs = {}
 
         # Process each file
         for html_path in html_files:
@@ -543,6 +573,18 @@ class DoctifyExtractor:
 
                 page_type = result['page_type']
                 entity_data = result['entity']
+
+                # Handle slug collisions for blog_post
+                if page_type == 'blog_post' and 'slug' in entity_data:
+                    original_slug = entity_data['slug']
+                    if original_slug in seen_slugs:
+                        # Collision detected - append hash of URL
+                        url = entity_data.get('canonical_url') or entity_data.get('source_file', '')
+                        hash_suffix = hashlib.sha1(url.encode('utf-8')).hexdigest()[:8]
+                        entity_data['slug'] = f"{original_slug}-{hash_suffix}"
+                        stats['slug_collisions'] += 1
+                        logger.debug(f"Slug collision resolved: {original_slug} -> {entity_data['slug']}")
+                    seen_slugs[entity_data['slug']] = True
 
                 # Write entity data
                 if page_type in entity_files:
@@ -580,6 +622,8 @@ class DoctifyExtractor:
         logger.info(f"Processed: {stats['processed']}")
         logger.info(f"Skipped: {stats['skipped']}")
         logger.info(f"Errors: {stats['errors']}")
+        if stats.get('slug_collisions', 0) > 0:
+            logger.info(f"Slug collisions resolved: {stats['slug_collisions']}")
         logger.info("\nEntities extracted by type:")
         for entity_type, count in stats['by_type'].items():
             logger.info(f"  {entity_type}: {count}")

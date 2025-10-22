@@ -1,4 +1,6 @@
-# Doctify.com Site Mirror 💪💉  
+# Doctify.com Site Mirror 💪💉
+![Python](https://img.shields.io/badge/Python-3.12-blue) ![Status](https://img.shields.io/badge/Release-v0.1-success) ![Agent](https://img.shields.io/badge/Claude_Code-Agent--generated-informational)
+
 *A structured web scraping and mirroring system built for analysis and schema design.*
 
 ---

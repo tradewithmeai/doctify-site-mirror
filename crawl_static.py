@@ -93,10 +93,16 @@ def save_seen(seen):
 def main():
     rp = load_robots(ROOT)
     seeds = sitemap_seeds(ROOT) or {ROOT}
+    # Expand seeds for Stage 4: practitioners, clinics, specialists
+    seeds |= {
+        canon("https://www.doctify.com/uk/doctor/"),
+        canon("https://www.doctify.com/uk/clinic/"),
+        canon("https://www.doctify.com/uk/specialists/"),
+    }
     q = deque(sorted(seeds))
     seen = load_seen()
     crawl_delay = 1.0
-    max_pages = 500  # adjustable
+    max_pages = 1200  # increased for Stage 4 expansion
     processed = 0
 
     idx_fp = (META / "crawl_index.jsonl").open("a", encoding="utf-8")
