@@ -67,6 +67,24 @@ site-mirror/
 
 ---
 
+## Results (Stage 3 – Agent-Generated Schema)
+
+- Local mirror built (static + Playwright rendered).
+- Claude Code **agent** analysed the mirror and generated:
+  - `schema/entities.yaml` and `schema/selectors.yaml` (evidence-based)
+  - `pipelines/extract.py` (rendered-first, fallback selectors, slug derivation)
+  - `pipelines/validate.py` (coverage + duplicate reporting)
+  - `scan_selectors.py` and `README_schema.md`
+- **Extraction output:** 368 blog posts (`mirror/extracted/blog_post.jsonl`)
+  - **Valid:** 315 (85.6%)
+  - **Duplicates (slug groups):** 11
+  - **Selector hit-rates** logged in `selector_report.json`
+  - **Validation report** in `validation_report.json`
+- Practitioner/Clinic/Review not present in this mirror (blog-only crawl).
+  Next crawl will seed `/uk/doctor/`, `/uk/clinic/`, `/uk/specialists/` to expand coverage.
+
+---
+
 ## 📦 Dependencies
 - Python ≥ 3.10  
 - `requests`, `beautifulsoup4`, `playwright`  
