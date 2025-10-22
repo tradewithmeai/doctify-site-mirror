@@ -1,0 +1,753 @@
+# Doctify.com CSS/BeautifulSoup Selectors
+# Defines extraction selectors for each entity type
+
+version: "1.0"
+created: "2025-10-22"
+description: "CSS and BeautifulSoup selectors for extracting data from Doctify HTML pages"
+
+# PAGE TYPE DETECTION
+# Rules to identify what type of page we're dealing with
+
+page_type_detection:
+  practitioner:
+    url_pattern: "^https://www\\.doctify\\.com/[a-z]{2}/specialist/[a-z0-9-]+$"
+    meta_patterns:
+      - selector: "meta[property='og:type']"
+        attribute: "content"
+        value: "profile"
+    body_class_patterns:
+      - "single-practitioner"
+      - "specialist-profile"
+
+  clinic:
+    url_pattern: "^https://www\\.doctify\\.com/[a-z]{2}/clinic/[a-z0-9-]+$"
+    meta_patterns:
+      - selector: "meta[property='og:type']"
+        attribute: "content"
+        value: "business.business"
+    body_class_patterns:
+      - "single-clinic"
+      - "clinic-profile"
+
+  blog_post:
+    url_pattern: "^https://www\\.doctify\\.com/[a-z]{2}/blog/posts/.+$"
+    meta_patterns:
+      - selector: "meta[property='og:type']"
+        attribute: "content"
+        value: "article"
+    body_class_patterns:
+      - "single-post"
+      - "blog-post"
+
+  specialism_listing:
+    url_pattern: "^https://www\\.doctify\\.com/[a-z]{2}/find/[a-z0-9-]+/.+/specialists$"
+    body_class_patterns:
+      - "specialism-listing"
+      - "search-results"
+
+# PRACTITIONER SELECTORS
+# Extracting data from practitioner profile pages
+
+practitioner:
+  # Identifiers
+  doctify_id:
+    method: "from_url"
+    pattern: "/specialist/([a-z0-9-]+)"
+    group: 1
+
+  url:
+    method: "canonical_url"
+    selector: "link[rel='canonical']"
+    attribute: "href"
+
+  # Basic Information
+  name:
+    selectors:
+      - selector: "h1.practitioner-name"
+        method: "text"
+      - selector: "div.profile-header h1"
+        method: "text"
+      - selector: "span[itemprop='name']"
+        method: "text"
+    fallback: null
+
+  title:
+    selectors:
+      - selector: "span.practitioner-title"
+        method: "text"
+      - selector: ".profile-header .title"
+        method: "text"
+    pattern: "^(Dr|Mr|Mrs|Ms|Miss|Prof|Professor)"
+    fallback: null
+
+  # Professional Details
+  specialisms:
+    selectors:
+      - selector: "div.specialisms ul li"
+        method: "text_list"
+      - selector: "a[href*='/find/']"
+        method: "text_list"
+      - selector: "span.specialism-tag"
+        method: "text_list"
+    type: "array"
+    clean: true
+
+  qualifications:
+    selectors:
+      - selector: "div.qualifications ul li"
+        method: "text_list"
+      - selector: ".credentials .qualification"
+        method: "text_list"
+      - selector: "span.qualification"
+        method: "text_list"
+    type: "array"
+    pattern: "([A-Z]{2,6})"
+    fallback: []
+
+  professional_memberships:
+    selectors:
+      - selector: "div.memberships ul li"
+        method: "text_list"
+      - selector: ".professional-bodies li"
+        method: "text_list"
+    type: "array"
+    fallback: []
+
+  registration_number:
+    selectors:
+      - selector: "span.gmc-number"
+        method: "text"
+      - selector: "div.registration-number"
+        method: "text"
+    pattern: "([0-9]{7})"
+    fallback: null
+
+  # Practice Information
+  bio:
+    selectors:
+      - selector: "div.practitioner-bio"
+        method: "html"
+      - selector: "div.about-section"
+        method: "html"
+      - selector: "section.biography"
+        method: "html"
+    fallback: null
+
+  treatments:
+    selectors:
+      - selector: "div.treatments ul li"
+        method: "text_list"
+      - selector: ".services-offered li"
+        method: "text_list"
+    type: "array"
+    fallback: []
+
+  conditions_treated:
+    selectors:
+      - selector: "div.conditions ul li"
+        method: "text_list"
+      - selector: ".conditions-treated li"
+        method: "text_list"
+    type: "array"
+    fallback: []
+
+  languages:
+    selectors:
+      - selector: "div.languages ul li"
+        method: "text_list"
+      - selector: "span.language"
+        method: "text_list"
+    type: "array"
+    fallback: []
+
+  # Ratings & Reviews
+  rating_average:
+    selectors:
+      - selector: "span.rating-value"
+        method: "text"
+      - selector: "div.average-rating"
+        method: "text"
+      - selector: "[itemprop='ratingValue']"
+        method: "text"
+    type: "float"
+    fallback: null
+
+  rating_count:
+    selectors:
+      - selector: "span.review-count"
+        method: "text"
+      - selector: "div.total-reviews"
+        method: "text"
+      - selector: "[itemprop='reviewCount']"
+        method: "text"
+    type: "integer"
+    pattern: "([0-9,]+)"
+    fallback: 0
+
+  # Contact & Location
+  phone:
+    selectors:
+      - selector: "a[href^='tel:']"
+        attribute: "href"
+      - selector: "span.phone-number"
+        method: "text"
+    pattern: "tel:(.+)"
+    fallback: null
+
+  email:
+    selectors:
+      - selector: "a[href^='mailto:']"
+        attribute: "href"
+    pattern: "mailto:(.+)"
+    fallback: null
+
+  website:
+    selectors:
+      - selector: "a.practitioner-website"
+        attribute: "href"
+      - selector: "a[rel='external']"
+        attribute: "href"
+    fallback: null
+
+  # Metadata
+  profile_image_url:
+    selectors:
+      - selector: "img.practitioner-photo"
+        attribute: "src"
+      - selector: "div.profile-image img"
+        attribute: "src"
+      - selector: "[itemprop='image']"
+        attribute: "src"
+    fallback: null
+
+  verified:
+    selectors:
+      - selector: "span.verified-badge"
+        method: "exists"
+      - selector: ".badge-verified"
+        method: "exists"
+    type: "boolean"
+    fallback: false
+
+  # Schema.org/JSON-LD extraction
+  structured_data:
+    selector: "script[type='application/ld+json']"
+    method: "json_ld"
+    schema_types: ["Person", "Physician", "MedicalBusiness"]
+
+# CLINIC SELECTORS
+# Extracting data from clinic pages
+
+clinic:
+  # Identifiers
+  doctify_id:
+    method: "from_url"
+    pattern: "/clinic/([a-z0-9-]+)"
+    group: 1
+
+  url:
+    method: "canonical_url"
+    selector: "link[rel='canonical']"
+    attribute: "href"
+
+  # Basic Information
+  name:
+    selectors:
+      - selector: "h1.clinic-name"
+        method: "text"
+      - selector: "div.clinic-header h1"
+        method: "text"
+      - selector: "[itemprop='name']"
+        method: "text"
+
+  type:
+    selectors:
+      - selector: "span.clinic-type"
+        method: "text"
+      - selector: "div.facility-type"
+        method: "text"
+    fallback: "Clinic"
+
+  description:
+    selectors:
+      - selector: "div.clinic-description"
+        method: "html"
+      - selector: "section.about"
+        method: "html"
+
+  # Location
+  address_line1:
+    selectors:
+      - selector: "span[itemprop='streetAddress']"
+        method: "text"
+      - selector: "div.address-line1"
+        method: "text"
+
+  address_line2:
+    selectors:
+      - selector: "div.address-line2"
+        method: "text"
+
+  city:
+    selectors:
+      - selector: "span[itemprop='addressLocality']"
+        method: "text"
+      - selector: "span.city"
+        method: "text"
+
+  county:
+    selectors:
+      - selector: "span[itemprop='addressRegion']"
+        method: "text"
+      - selector: "span.county"
+        method: "text"
+
+  postcode:
+    selectors:
+      - selector: "span[itemprop='postalCode']"
+        method: "text"
+      - selector: "span.postcode"
+        method: "text"
+
+  country:
+    selectors:
+      - selector: "span[itemprop='addressCountry']"
+        method: "text"
+    fallback: "United Kingdom"
+
+  latitude:
+    selectors:
+      - selector: "meta[property='place:location:latitude']"
+        attribute: "content"
+      - selector: "[itemprop='latitude']"
+        method: "text"
+    type: "float"
+
+  longitude:
+    selectors:
+      - selector: "meta[property='place:location:longitude']"
+        attribute: "content"
+      - selector: "[itemprop='longitude']"
+        method: "text"
+    type: "float"
+
+  # Contact
+  phone:
+    selectors:
+      - selector: "a[href^='tel:']"
+        attribute: "href"
+      - selector: "[itemprop='telephone']"
+        method: "text"
+    pattern: "tel:(.+)"
+
+  email:
+    selectors:
+      - selector: "a[href^='mailto:']"
+        attribute: "href"
+      - selector: "[itemprop='email']"
+        method: "text"
+    pattern: "mailto:(.+)"
+
+  website:
+    selectors:
+      - selector: "a.clinic-website"
+        attribute: "href"
+      - selector: "[itemprop='url']"
+        attribute: "href"
+
+  # Services
+  specialisms:
+    selectors:
+      - selector: "div.specialisms ul li"
+        method: "text_list"
+      - selector: "a[href*='/find/']"
+        method: "text_list"
+    type: "array"
+
+  treatments:
+    selectors:
+      - selector: "div.treatments ul li"
+        method: "text_list"
+      - selector: ".services li"
+        method: "text_list"
+    type: "array"
+
+  # Ratings
+  rating_average:
+    selectors:
+      - selector: "[itemprop='ratingValue']"
+        method: "text"
+      - selector: "span.rating-value"
+        method: "text"
+    type: "float"
+
+  rating_count:
+    selectors:
+      - selector: "[itemprop='reviewCount']"
+        method: "text"
+      - selector: "span.review-count"
+        method: "text"
+    type: "integer"
+
+  # Images
+  logo_url:
+    selectors:
+      - selector: "img.clinic-logo"
+        attribute: "src"
+      - selector: "[itemprop='logo']"
+        attribute: "src"
+
+  images:
+    selectors:
+      - selector: "div.clinic-gallery img"
+        attribute: "src"
+        method: "list"
+    type: "array"
+
+  # Structured data
+  structured_data:
+    selector: "script[type='application/ld+json']"
+    method: "json_ld"
+    schema_types: ["MedicalBusiness", "MedicalClinic", "Hospital"]
+
+# REVIEW SELECTORS
+# Extracting reviews from practitioner or clinic pages
+
+review:
+  container:
+    selector: "div.review-item, article.review, div[class*='review']"
+
+  review_id:
+    selectors:
+      - attribute: "data-review-id"
+      - attribute: "id"
+    method: "attribute"
+
+  # Rating
+  rating:
+    selectors:
+      - selector: "span.review-rating"
+        method: "text"
+      - selector: "[itemprop='ratingValue']"
+        method: "text"
+      - selector: "div.stars"
+        attribute: "data-rating"
+    type: "float"
+
+  title:
+    selectors:
+      - selector: "h3.review-title"
+        method: "text"
+      - selector: "div.review-heading"
+        method: "text"
+
+  text:
+    selectors:
+      - selector: "div.review-text"
+        method: "text"
+      - selector: "p.review-content"
+        method: "text"
+      - selector: "[itemprop='reviewBody']"
+        method: "text"
+
+  # Reviewer
+  reviewer_name:
+    selectors:
+      - selector: "span.reviewer-name"
+        method: "text"
+      - selector: "[itemprop='author']"
+        method: "text"
+
+  reviewer_initials:
+    selectors:
+      - selector: "span.reviewer-initials"
+        method: "text"
+
+  reviewer_verified:
+    selectors:
+      - selector: "span.verified-patient"
+        method: "exists"
+      - selector: "i.verified-icon"
+        method: "exists"
+    type: "boolean"
+
+  # Dates
+  review_date:
+    selectors:
+      - selector: "time.review-date"
+        attribute: "datetime"
+      - selector: "[itemprop='datePublished']"
+        attribute: "content"
+      - selector: "span.date"
+        method: "text"
+    type: "date"
+
+  # Response
+  practitioner_response:
+    selectors:
+      - selector: "div.practitioner-response"
+        method: "text"
+      - selector: "div.response-text"
+        method: "text"
+
+  response_date:
+    selectors:
+      - selector: "time.response-date"
+        attribute: "datetime"
+      - selector: "span.response-date"
+        method: "text"
+    type: "date"
+
+# BLOG POST SELECTORS
+# Extracting blog post content
+
+blog_post:
+  # Identifiers
+  slug:
+    method: "from_url"
+    pattern: "/blog/posts/(.+?)(?:/|$)"
+    group: 1
+
+  canonical_url:
+    selectors:
+      - selector: "link[rel='canonical']"
+        attribute: "href"
+      - selector: "meta[property='og:url']"
+        attribute: "content"
+
+  # Content
+  title:
+    selectors:
+      - selector: ".elementor-widget-theme-post-title h1"
+        method: "text"
+      - selector: "h1.elementor-heading-title"
+        method: "text"
+      - selector: "h1"
+        method: "text"
+      - selector: "meta[property='og:title']"
+        attribute: "content"
+      - selector: "title"
+        method: "text"
+
+  subtitle:
+    selectors:
+      - selector: "h2.post-subtitle"
+        method: "text"
+      - selector: "div.post-excerpt"
+        method: "text"
+
+  excerpt:
+    selectors:
+      - selector: "div.post-excerpt"
+        method: "text"
+      - selector: "meta[name='description']"
+        attribute: "content"
+      - selector: "meta[property='og:description']"
+        attribute: "content"
+
+  content:
+    selectors:
+      - selector: ".elementor-widget-theme-post-content"
+        method: "html"
+      - selector: ".post-content-container"
+        method: "html"
+      - selector: "div.entry-content"
+        method: "html"
+      - selector: "article.post-content"
+        method: "html"
+      - selector: "div.post-body"
+        method: "html"
+
+  # Classification
+  categories:
+    selectors:
+      - selector: "a[rel='category tag']"
+        method: "text_list"
+      - selector: "span.category"
+        method: "text_list"
+    type: "array"
+
+  tags:
+    selectors:
+      - selector: "a[rel='tag']"
+        method: "text_list"
+      - selector: "span.tag"
+        method: "text_list"
+    type: "array"
+
+  # Author
+  author_name:
+    selectors:
+      - selector: "meta[name='author']"
+        attribute: "content"
+      - selector: ".elementor-post-info__item--type-author"
+        method: "text"
+      - selector: "span.author-name"
+        method: "text"
+      - selector: "a[rel='author']"
+        method: "text"
+      - selector: "[itemprop='author']"
+        method: "text"
+
+  # Metadata
+  featured_image_url:
+    selectors:
+      - selector: "meta[property='og:image']"
+        attribute: "content"
+      - selector: "img.featured-image"
+        attribute: "src"
+
+  reading_time_minutes:
+    selectors:
+      - selector: "span.reading-time"
+        method: "text"
+      - selector: "meta[name='twitter:data2']"
+        attribute: "content"
+    pattern: "([0-9]+)"
+    type: "integer"
+
+  meta_description:
+    selectors:
+      - selector: "meta[name='description']"
+        attribute: "content"
+
+  # Timestamps
+  published_date:
+    selectors:
+      - selector: "meta[property='article:published_time']"
+        attribute: "content"
+      - selector: ".elementor-post-info__item--type-date"
+        method: "text"
+      - selector: "time[datetime]"
+        attribute: "datetime"
+      - selector: "time.published"
+        attribute: "datetime"
+    type: "datetime"
+
+  modified_date:
+    selectors:
+      - selector: "time.updated"
+        attribute: "datetime"
+      - selector: "meta[property='article:modified_time']"
+        attribute: "content"
+    type: "datetime"
+
+  # Related content (extract from links)
+  related_practitioners:
+    selectors:
+      - selector: "a[href*='/specialist/']"
+        attribute: "href"
+        method: "list"
+    type: "array"
+    extract_pattern: "/specialist/([a-z0-9-]+)"
+
+  related_specialisms:
+    selectors:
+      - selector: "a[href*='/find/']"
+        method: "text_list"
+    type: "array"
+
+  # Structured data
+  structured_data:
+    selector: "script[type='application/ld+json']"
+    method: "json_ld"
+    schema_types: ["Article", "BlogPosting"]
+
+# SPECIALISM SELECTORS
+# Extracting specialism information
+
+specialism:
+  slug:
+    method: "from_url"
+    pattern: "/find/([a-z0-9-]+)/"
+    group: 1
+
+  name:
+    selectors:
+      - selector: "h1.specialism-name"
+        method: "text"
+      - selector: "h1"
+        method: "text"
+
+  description:
+    selectors:
+      - selector: "div.specialism-description"
+        method: "html"
+      - selector: "section.about"
+        method: "html"
+
+  practitioner_count:
+    selectors:
+      - selector: "span.practitioner-count"
+        method: "text"
+      - selector: "div.results-count"
+        method: "text"
+    pattern: "([0-9,]+)"
+    type: "integer"
+
+# EXTRACTION METHODS
+# Defines how different extraction methods work
+
+extraction_methods:
+  text:
+    description: "Extract text content from element"
+    clean: true
+    strip_whitespace: true
+
+  html:
+    description: "Extract HTML content from element"
+    clean: false
+
+  attribute:
+    description: "Extract attribute value from element"
+    requires: "attribute_name"
+
+  text_list:
+    description: "Extract text from multiple matching elements"
+    returns: "array"
+    clean: true
+
+  list:
+    description: "Extract attribute from multiple matching elements"
+    returns: "array"
+    requires: "attribute_name"
+
+  exists:
+    description: "Check if element exists (boolean)"
+    returns: "boolean"
+
+  json_ld:
+    description: "Parse JSON-LD structured data"
+    returns: "object"
+
+  from_url:
+    description: "Extract from page URL using regex pattern"
+    requires: "pattern"
+
+  canonical_url:
+    description: "Get canonical URL from link tag"
+
+# CLEANING RULES
+# Text cleaning and normalization
+
+cleaning_rules:
+  strip_whitespace:
+    description: "Remove leading/trailing whitespace"
+    enabled: true
+
+  normalize_spaces:
+    description: "Replace multiple spaces with single space"
+    enabled: true
+
+  remove_zero_width:
+    description: "Remove zero-width characters"
+    enabled: true
+
+  decode_html_entities:
+    description: "Decode HTML entities like &amp;"
+    enabled: true
+
+  remove_script_style:
+    description: "Remove script and style tags from HTML"
+    enabled: true
+    applies_to: ["html", "text"]

@@ -1,0 +1,754 @@
+# Doctify.com Data Entities Schema
+# Defines all entities, their fields, and relationships
+
+version: "1.0"
+created: "2025-10-22"
+description: "Schema for extracting structured data from Doctify.com site mirror"
+
+entities:
+
+  # PRACTITIONER ENTITY
+  # Healthcare professionals (doctors, specialists, consultants)
+  practitioner:
+    description: "Individual healthcare provider with profile and reviews"
+    primary_key: "doctify_id"
+    fields:
+      # Identifiers
+      doctify_id:
+        type: "string"
+        required: true
+        description: "Unique Doctify identifier extracted from URL"
+        example: "dr-adam-harris"
+
+      url:
+        type: "url"
+        required: true
+        description: "Full URL to practitioner profile page"
+        example: "https://www.doctify.com/uk/specialist/dr-adam-harris"
+
+      # Basic Information
+      name:
+        type: "string"
+        required: true
+        description: "Full name of practitioner"
+        example: "Dr Adam Harris"
+
+      title:
+        type: "string"
+        required: false
+        description: "Professional title (Dr, Mr, Ms, Prof, etc.)"
+        example: "Dr"
+
+      first_name:
+        type: "string"
+        required: false
+        description: "Given name"
+        example: "Adam"
+
+      last_name:
+        type: "string"
+        required: false
+        description: "Family name"
+        example: "Harris"
+
+      # Professional Details
+      specialisms:
+        type: "array[string]"
+        required: false
+        description: "List of medical specialisms"
+        example: ["Dermatology", "Cosmetic Dermatology"]
+
+      qualifications:
+        type: "array[string]"
+        required: false
+        description: "Medical degrees and certifications"
+        example: ["MBBS", "MD", "FRCP"]
+
+      professional_memberships:
+        type: "array[string]"
+        required: false
+        description: "Professional bodies and associations"
+        example: ["GMC", "Royal College of Physicians"]
+
+      registration_number:
+        type: "string"
+        required: false
+        description: "Medical registration number (GMC, etc.)"
+        example: "1234567"
+
+      # Practice Information
+      bio:
+        type: "text"
+        required: false
+        description: "Biography and professional summary"
+
+      treatments:
+        type: "array[string]"
+        required: false
+        description: "Treatments and procedures offered"
+
+      conditions_treated:
+        type: "array[string]"
+        required: false
+        description: "Medical conditions treated"
+
+      languages:
+        type: "array[string]"
+        required: false
+        description: "Languages spoken"
+        example: ["English", "Spanish"]
+
+      # Location & Contact
+      clinics:
+        type: "array[clinic_association]"
+        required: false
+        description: "Associated clinics and locations"
+
+      phone:
+        type: "string"
+        required: false
+        description: "Contact phone number"
+
+      email:
+        type: "email"
+        required: false
+        description: "Contact email address"
+
+      website:
+        type: "url"
+        required: false
+        description: "Personal or practice website"
+
+      # Reviews & Ratings
+      rating_average:
+        type: "float"
+        required: false
+        description: "Average rating score (0-5)"
+        example: 4.8
+
+      rating_count:
+        type: "integer"
+        required: false
+        description: "Total number of reviews"
+        example: 127
+
+      reviews:
+        type: "array[review_id]"
+        required: false
+        description: "Array of review IDs"
+
+      # Metadata
+      profile_image_url:
+        type: "url"
+        required: false
+        description: "URL to profile photo"
+
+      verified:
+        type: "boolean"
+        required: false
+        description: "Whether profile is verified by Doctify"
+        default: false
+
+      accepts_nhs:
+        type: "boolean"
+        required: false
+        description: "Whether accepts NHS patients"
+        default: false
+
+      accepts_private:
+        type: "boolean"
+        required: false
+        description: "Whether accepts private patients"
+        default: false
+
+      online_booking_available:
+        type: "boolean"
+        required: false
+        description: "Whether online booking is available"
+        default: false
+
+      # Timestamps
+      extracted_at:
+        type: "datetime"
+        required: true
+        description: "Timestamp of data extraction"
+
+      last_updated:
+        type: "datetime"
+        required: false
+        description: "Last profile update timestamp from source"
+
+    relationships:
+      - entity: "clinic"
+        type: "many-to-many"
+        description: "Practitioners can work at multiple clinics"
+      - entity: "review"
+        type: "one-to-many"
+        description: "Practitioners have multiple reviews"
+      - entity: "specialism"
+        type: "many-to-many"
+        description: "Practitioners can have multiple specialisms"
+
+  # CLINIC ENTITY
+  # Healthcare facilities and practices
+  clinic:
+    description: "Healthcare facility, clinic, hospital, or practice"
+    primary_key: "doctify_id"
+    fields:
+      # Identifiers
+      doctify_id:
+        type: "string"
+        required: true
+        description: "Unique Doctify identifier"
+        example: "cathedral-eye-clinic"
+
+      url:
+        type: "url"
+        required: true
+        description: "Full URL to clinic page"
+
+      # Basic Information
+      name:
+        type: "string"
+        required: true
+        description: "Name of clinic or facility"
+        example: "Cathedral Eye Clinic"
+
+      type:
+        type: "string"
+        required: false
+        description: "Type of facility"
+        enum: ["Clinic", "Hospital", "Practice", "Surgery", "Medical Centre"]
+
+      description:
+        type: "text"
+        required: false
+        description: "Clinic description and overview"
+
+      # Location
+      address_line1:
+        type: "string"
+        required: false
+        description: "Street address line 1"
+
+      address_line2:
+        type: "string"
+        required: false
+        description: "Street address line 2"
+
+      city:
+        type: "string"
+        required: false
+        description: "City"
+
+      county:
+        type: "string"
+        required: false
+        description: "County or region"
+
+      postcode:
+        type: "string"
+        required: false
+        description: "Postal code"
+
+      country:
+        type: "string"
+        required: false
+        description: "Country"
+        default: "United Kingdom"
+
+      latitude:
+        type: "float"
+        required: false
+        description: "Geographic latitude"
+
+      longitude:
+        type: "float"
+        required: false
+        description: "Geographic longitude"
+
+      # Contact Information
+      phone:
+        type: "string"
+        required: false
+        description: "Main phone number"
+
+      email:
+        type: "email"
+        required: false
+        description: "Contact email"
+
+      website:
+        type: "url"
+        required: false
+        description: "Clinic website"
+
+      # Services
+      specialisms:
+        type: "array[string]"
+        required: false
+        description: "Medical specialisms offered"
+
+      treatments:
+        type: "array[string]"
+        required: false
+        description: "Treatments and services available"
+
+      facilities:
+        type: "array[string]"
+        required: false
+        description: "Available facilities and equipment"
+
+      # Hours & Accessibility
+      opening_hours:
+        type: "object"
+        required: false
+        description: "Opening hours by day of week"
+
+      parking_available:
+        type: "boolean"
+        required: false
+        description: "Whether parking is available"
+
+      wheelchair_accessible:
+        type: "boolean"
+        required: false
+        description: "Whether wheelchair accessible"
+
+      # Reviews & Ratings
+      rating_average:
+        type: "float"
+        required: false
+        description: "Average rating (0-5)"
+
+      rating_count:
+        type: "integer"
+        required: false
+        description: "Number of reviews"
+
+      # Metadata
+      images:
+        type: "array[url]"
+        required: false
+        description: "URLs to clinic images"
+
+      logo_url:
+        type: "url"
+        required: false
+        description: "URL to clinic logo"
+
+      verified:
+        type: "boolean"
+        required: false
+        description: "Whether clinic is verified"
+        default: false
+
+      accepts_nhs:
+        type: "boolean"
+        required: false
+        description: "Whether accepts NHS patients"
+
+      accepts_private:
+        type: "boolean"
+        required: false
+        description: "Whether accepts private patients"
+
+      # Timestamps
+      extracted_at:
+        type: "datetime"
+        required: true
+        description: "Timestamp of extraction"
+
+      last_updated:
+        type: "datetime"
+        required: false
+        description: "Last update timestamp"
+
+    relationships:
+      - entity: "practitioner"
+        type: "many-to-many"
+        description: "Clinics have multiple practitioners"
+      - entity: "review"
+        type: "one-to-many"
+        description: "Clinics have reviews"
+      - entity: "specialism"
+        type: "many-to-many"
+        description: "Clinics offer multiple specialisms"
+
+  # REVIEW ENTITY
+  # Patient reviews and ratings
+  review:
+    description: "Patient review for practitioner or clinic"
+    primary_key: "review_id"
+    fields:
+      # Identifiers
+      review_id:
+        type: "string"
+        required: true
+        description: "Unique review identifier"
+
+      reviewed_entity_type:
+        type: "string"
+        required: true
+        description: "Type of entity being reviewed"
+        enum: ["practitioner", "clinic"]
+
+      reviewed_entity_id:
+        type: "string"
+        required: true
+        description: "ID of practitioner or clinic"
+
+      # Review Content
+      rating:
+        type: "float"
+        required: true
+        description: "Overall rating (0-5)"
+
+      title:
+        type: "string"
+        required: false
+        description: "Review title or headline"
+
+      text:
+        type: "text"
+        required: false
+        description: "Full review text"
+
+      # Rating Dimensions
+      rating_bedside_manner:
+        type: "float"
+        required: false
+        description: "Bedside manner rating"
+
+      rating_waiting_time:
+        type: "float"
+        required: false
+        description: "Waiting time rating"
+
+      rating_staff_friendliness:
+        type: "float"
+        required: false
+        description: "Staff friendliness rating"
+
+      rating_cleanliness:
+        type: "float"
+        required: false
+        description: "Facility cleanliness rating"
+
+      rating_explanation:
+        type: "float"
+        required: false
+        description: "Explanation of treatment rating"
+
+      # Reviewer Information
+      reviewer_name:
+        type: "string"
+        required: false
+        description: "Reviewer name (may be anonymized)"
+
+      reviewer_initials:
+        type: "string"
+        required: false
+        description: "Reviewer initials"
+
+      reviewer_verified:
+        type: "boolean"
+        required: false
+        description: "Whether reviewer is verified patient"
+        default: false
+
+      # Treatment Information
+      treatment_received:
+        type: "string"
+        required: false
+        description: "Treatment or procedure reviewed"
+
+      condition_treated:
+        type: "string"
+        required: false
+        description: "Condition being treated"
+
+      # Response
+      practitioner_response:
+        type: "text"
+        required: false
+        description: "Practitioner's response to review"
+
+      response_date:
+        type: "date"
+        required: false
+        description: "Date of practitioner response"
+
+      # Timestamps
+      review_date:
+        type: "date"
+        required: false
+        description: "Date review was posted"
+
+      appointment_date:
+        type: "date"
+        required: false
+        description: "Date of appointment being reviewed"
+
+      extracted_at:
+        type: "datetime"
+        required: true
+        description: "Timestamp of extraction"
+
+    relationships:
+      - entity: "practitioner"
+        type: "many-to-one"
+        description: "Review belongs to practitioner"
+      - entity: "clinic"
+        type: "many-to-one"
+        description: "Review may be for clinic"
+
+  # SPECIALISM ENTITY
+  # Medical specialisms and specialties
+  specialism:
+    description: "Medical specialism or specialty area"
+    primary_key: "slug"
+    fields:
+      # Identifiers
+      slug:
+        type: "string"
+        required: true
+        description: "URL-friendly identifier"
+        example: "dermatology"
+
+      url:
+        type: "url"
+        required: false
+        description: "URL to specialism page"
+
+      # Basic Information
+      name:
+        type: "string"
+        required: true
+        description: "Display name of specialism"
+        example: "Dermatology"
+
+      description:
+        type: "text"
+        required: false
+        description: "Description of specialism"
+
+      category:
+        type: "string"
+        required: false
+        description: "Parent category or medical field"
+        example: "Surgery"
+
+      # Metadata
+      practitioner_count:
+        type: "integer"
+        required: false
+        description: "Number of practitioners in this specialism"
+
+      common_treatments:
+        type: "array[string]"
+        required: false
+        description: "Common treatments in this specialism"
+
+      common_conditions:
+        type: "array[string]"
+        required: false
+        description: "Common conditions treated"
+
+      # Timestamps
+      extracted_at:
+        type: "datetime"
+        required: true
+        description: "Timestamp of extraction"
+
+    relationships:
+      - entity: "practitioner"
+        type: "many-to-many"
+        description: "Specialism has many practitioners"
+      - entity: "clinic"
+        type: "many-to-many"
+        description: "Specialism offered at many clinics"
+
+  # BLOG POST ENTITY
+  # Educational and informational content
+  blog_post:
+    description: "Blog article or educational content"
+    primary_key: "slug"
+    fields:
+      # Identifiers
+      slug:
+        type: "string"
+        required: true
+        description: "URL slug identifier"
+
+      canonical_url:
+        type: "url"
+        required: false
+        description: "Canonical URL to blog post"
+
+      # Content
+      title:
+        type: "string"
+        required: true
+        description: "Blog post title"
+
+      subtitle:
+        type: "string"
+        required: false
+        description: "Subtitle or headline"
+
+      excerpt:
+        type: "text"
+        required: false
+        description: "Post excerpt or summary"
+
+      content:
+        type: "html"
+        required: false
+        description: "Full HTML content of post"
+
+      # Classification
+      categories:
+        type: "array[string]"
+        required: false
+        description: "Blog categories"
+        example: ["For Patients", "Dermatology"]
+
+      tags:
+        type: "array[string]"
+        required: false
+        description: "Post tags"
+
+      # Authorship
+      author_name:
+        type: "string"
+        required: false
+        description: "Author name"
+
+      author_bio:
+        type: "text"
+        required: false
+        description: "Author biography"
+
+      # Metadata
+      featured_image_url:
+        type: "url"
+        required: false
+        description: "URL to featured image"
+
+      reading_time_minutes:
+        type: "integer"
+        required: false
+        description: "Estimated reading time"
+
+      word_count:
+        type: "integer"
+        required: false
+        description: "Word count"
+
+      # SEO
+      meta_description:
+        type: "string"
+        required: false
+        description: "Meta description for SEO"
+
+      meta_keywords:
+        type: "array[string]"
+        required: false
+        description: "Meta keywords"
+
+      # Related Content
+      related_practitioners:
+        type: "array[string]"
+        required: false
+        description: "IDs of related practitioners"
+
+      related_specialisms:
+        type: "array[string]"
+        required: false
+        description: "Related medical specialisms"
+
+      # Timestamps
+      published_date:
+        type: "datetime"
+        required: false
+        description: "Publication date"
+
+      modified_date:
+        type: "datetime"
+        required: false
+        description: "Last modified date"
+
+      extracted_at:
+        type: "datetime"
+        required: true
+        description: "Timestamp of extraction"
+
+    relationships:
+      - entity: "specialism"
+        type: "many-to-many"
+        description: "Blog posts can relate to multiple specialisms"
+      - entity: "practitioner"
+        type: "many-to-many"
+        description: "Blog posts may mention practitioners"
+
+# ASSOCIATION OBJECTS
+# Used for many-to-many relationships
+
+associations:
+  clinic_association:
+    description: "Links practitioner to clinic with role"
+    fields:
+      clinic_id:
+        type: "string"
+        required: true
+      clinic_name:
+        type: "string"
+        required: false
+      role:
+        type: "string"
+        required: false
+        description: "Role at clinic (e.g., Consultant, Partner)"
+      address:
+        type: "string"
+        required: false
+
+# OUTPUT FORMATS
+# Define how entities are serialized
+
+output_formats:
+  jsonl:
+    description: "JSON Lines format, one entity per line"
+    extension: ".jsonl"
+    encoding: "utf-8"
+
+  csv:
+    description: "Comma-separated values (flattened)"
+    extension: ".csv"
+    encoding: "utf-8"
+
+  json:
+    description: "JSON array of entities"
+    extension: ".json"
+    encoding: "utf-8"
+
+# DATA VALIDATION RULES
+
+validation_rules:
+  required_fields:
+    description: "All fields marked as required must be present"
+
+  data_types:
+    description: "Field values must match specified data types"
+
+  url_format:
+    description: "URL fields must be valid HTTP/HTTPS URLs"
+
+  email_format:
+    description: "Email fields must be valid email addresses"
+
+  rating_range:
+    description: "Rating values must be between 0 and 5"
+
+  unique_keys:
+    description: "Primary keys must be unique within entity type"
